@@ -11,17 +11,18 @@ public class NFA implements NFAInterface {
     LinkedHashSet<NFAState> states;
     String startState;
     LinkedHashSet<NFAState> finalStates;
-    HashMap<Character, NFAState> transitions;
-    LinkedHashMap<NFAState, ArrayList<Map<Character,NFAState>>> transitionTable;
+    Map<NFAState, Map<Character, Set<NFAState>>> transitionTable;
+//    LinkedHashMap<NFAState, ArrayList<Map<Character,NFAState>>> transitionTable;
 
     public NFA() {
 
         sigma = new LinkedHashSet<>();
+        sigma.add('e');
         states = new LinkedHashSet<>();
         startState = "";
         finalStates = new LinkedHashSet<>();
-        transitions = new HashMap<>();
-        transitionTable = new LinkedHashMap<>();
+        transitionTable = new HashMap<>();
+//        transitionTable = new LinkedHashMap<>();
 
     }
     @Override
@@ -70,6 +71,45 @@ public class NFA implements NFAInterface {
 
     @Override
     public boolean accepts(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (!sigma.contains(s.charAt(i))) {
+                return false;
+            }
+        }
+        Set<NFAState> currentStates = new HashSet<>();
+        currentStates.add((NFAState) getState(startState));
+        System.out.println("start state" + currentStates);
+
+        if (startState.equals("")){
+            return false;
+        }
+
+        for (int i = 0; i < s.length(); i++) {
+            Set<NFAState> nextStates = new HashSet<>();
+
+            for (NFAState current : currentStates) {
+                Map<Character, Set<NFAState>> transitions = transitionTable.get(current);
+                if (transitions != null && transitions.containsKey(s.charAt(i))) {
+                    Set<NFAState> destStates = transitions.get(s.charAt(i));
+                    System.out.println("dest States" + destStates);
+                    for (NFAState dest : destStates) {
+                        nextStates.add(dest);
+                        nextStates.addAll(eClosure(dest));
+                    }
+                }
+            }
+            if (nextStates.isEmpty()) {
+                return false;
+            }
+            currentStates = nextStates;
+        }
+        System.out.println("current states" + currentStates);
+        for (NFAState state : currentStates) {
+            if (finalStates.contains(state)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -119,7 +159,29 @@ public class NFA implements NFAInterface {
 
     @Override
     public Set<NFAState> eClosure(NFAState s) {
-        return null;
+        Set<NFAState> closure = new HashSet<>();
+        Stack<NFAState> stack = new Stack<>();
+        closure.add(s);
+        stack.push(s);
+
+        while (!stack.isEmpty()) {
+            NFAState current = stack.pop();
+            Map<Character, Set<NFAState>> transitions = transitionTable.get(current);
+            System.out.println("e closure trans " + transitions);
+            System.out.println("current " + current);
+
+            if (transitions != null && transitions.containsKey('e')) {
+                Set<NFAState> epsilonStates = transitions.get('e');
+                for (NFAState state : epsilonStates) {
+                    if (closure.add(state)) {  // returns true if state was added
+                        stack.push(state);
+                    }
+                }
+            }
+        }
+
+        System.out.println("the closure for " + s  + closure);
+        return closure;
     }
 
     @Override
@@ -129,8 +191,57 @@ public class NFA implements NFAInterface {
 
     @Override
     public boolean addTransition(String fromState, Set<String> toStates, char onSymb) {
+
+        if (!sigma.contains(onSymb)){
+            return false;
+        }
+
+        NFAState from = null;
+        for (NFAState state : states) {
+            if (state.getName().equals(fromState)) {
+                from = state;
+                break;
+            }
+        }
+
+        if (from == null){
+            return false;
+        }
+
+        // convert toStates strings to NFAState objects
+        Set<NFAState> toStateSet = new HashSet<>();
+        for (String stateName : toStates) {
+            for (NFAState state : states) {
+                if (state.getName().equals(stateName)) {
+                    toStateSet.add(state);
+                    break;
+                }
+            }
+        }
+        // if none of the to states exist then just return false
+        if(toStateSet.isEmpty()){
+            return false;
+        }
+
+
+        if (!transitionTable.containsKey(from)) {
+            transitionTable.put(from, new HashMap<>());
+        }
+
+        if (!transitionTable.get(from).containsKey(onSymb)) {
+            transitionTable.get(from).put(onSymb, new HashSet<>());
+        }
+
+        // add all destination states
+        transitionTable.get(from).get(onSymb).addAll(toStateSet);
+        return true;
+    }
+
+    @Override
+    public boolean addTransition(String fromState, String toState, char onSymb) {
         return false;
     }
+
 
     @Override
     public boolean isDFA() {
