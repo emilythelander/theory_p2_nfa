@@ -12,7 +12,6 @@ public class NFA implements NFAInterface {
     String startState;
     LinkedHashSet<NFAState> finalStates;
     Map<NFAState, Map<Character, Set<NFAState>>> transitionTable;
-//    LinkedHashMap<NFAState, ArrayList<Map<Character,NFAState>>> transitionTable;
 
     public NFA() {
 
@@ -22,7 +21,6 @@ public class NFA implements NFAInterface {
         startState = "";
         finalStates = new LinkedHashSet<>();
         transitionTable = new HashMap<>();
-//        transitionTable = new LinkedHashMap<>();
 
     }
     @Override
@@ -76,13 +74,16 @@ public class NFA implements NFAInterface {
                 return false;
             }
         }
+
+        // get all e closures first
         Set<NFAState> currentStates = new HashSet<>();
         currentStates.add((NFAState) getState(startState));
-        System.out.println("start state" + currentStates);
+        currentStates.addAll(eClosure((NFAState) getState(startState)));
 
-        if (startState.equals("")){
+        if (startState.equals("")) {
             return false;
         }
+
 
         for (int i = 0; i < s.length(); i++) {
             Set<NFAState> nextStates = new HashSet<>();
@@ -91,19 +92,19 @@ public class NFA implements NFAInterface {
                 Map<Character, Set<NFAState>> transitions = transitionTable.get(current);
                 if (transitions != null && transitions.containsKey(s.charAt(i))) {
                     Set<NFAState> destStates = transitions.get(s.charAt(i));
-                    System.out.println("dest States" + destStates);
                     for (NFAState dest : destStates) {
                         nextStates.add(dest);
                         nextStates.addAll(eClosure(dest));
                     }
                 }
             }
+
             if (nextStates.isEmpty()) {
                 return false;
             }
             currentStates = nextStates;
         }
-        System.out.println("current states" + currentStates);
+
         for (NFAState state : currentStates) {
             if (finalStates.contains(state)) {
                 return true;
