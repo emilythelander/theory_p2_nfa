@@ -155,7 +155,12 @@ public class NFA implements NFAInterface {
 
     @Override
     public Set<NFAState> getToState(NFAState from, char onSymb) {
-        return null;
+        if (transitionTable.containsKey(from)) {
+            Map<Character, Set<NFAState>> transitions = transitionTable.get(from);
+            return transitions.getOrDefault(onSymb, new HashSet<>());
+        }
+
+        return new HashSet<>();
     }
 
     @Override
@@ -187,7 +192,40 @@ public class NFA implements NFAInterface {
 
     @Override
     public int maxCopies(String s) {
-        return 0;
+        if (startState.equals("")) {
+            return 0;
+        }
+
+        Set<NFAState> currentStates = new HashSet<>();
+        currentStates.add((NFAState) getState(startState));
+        currentStates.addAll(eClosure((NFAState) getState(startState)));
+
+        int maxCopies = currentStates.size();
+
+        for (int i = 0; i < s.length(); i++) {
+            Set<NFAState> nextStates = new HashSet<>();
+
+            for (NFAState current: currentStates) {
+                Map<Character, Set<NFAState>> transitions = transitionTable.get(current);
+                if (transitions != null && transitions.containsKey(s.charAt(i))) {
+                    Set<NFAState> destStates = transitions.get(s.charAt(i));
+                    for (NFAState dest : destStates) {
+                        nextStates.add(dest);
+                        nextStates.addAll(eClosure(dest));
+                    }
+                }
+            }
+
+            maxCopies = Math.max(maxCopies, nextStates.size());
+
+            if (nextStates.isEmpty()) {
+                break;
+            }
+
+            currentStates = nextStates;
+        }
+
+        return maxCopies;
     }
 
     @Override
@@ -238,14 +276,25 @@ public class NFA implements NFAInterface {
         return true;
     }
 
-    @Override
-    public boolean addTransition(String fromState, String toState, char onSymb) {
-        return false;
-    }
-
 
     @Override
     public boolean isDFA() {
-        return false;
+        if (sigma.contains('e')) {
+            return false;
+        }
+
+        for (NFAState state: states) {
+            Map<Character, Set<NFAState>> transitions = transitionTable.get(state);
+            if (transitions != null) {
+                for (Character symbol: transitions.keySet()) {
+                    Set<NFAState> destStates = transitions.get(symbol);
+                    if (destStates.size() > 1) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 }
