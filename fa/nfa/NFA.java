@@ -4,6 +4,13 @@ import fa.State;
 
 import java.util.*;
 
+/**
+ * The NFA class, which implements NFAInterface, is responsible for creating and
+ * modifying the nondeterministic finite automata objects.
+ *
+ * @author Emily Thelander
+ * @author Spencer Pattillo
+ */
 public class NFA implements NFAInterface {
 
 
@@ -13,6 +20,10 @@ public class NFA implements NFAInterface {
     LinkedHashSet<NFAState> finalStates;
     Map<NFAState, Map<Character, Set<NFAState>>> transitionTable;
 
+    
+    /**
+     * NFA constructor. Creates NFA objects and instantiates it with empty values.
+     */
     public NFA() {
 
         sigma = new LinkedHashSet<>();
