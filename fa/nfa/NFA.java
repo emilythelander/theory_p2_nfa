@@ -184,8 +184,6 @@ public class NFA implements NFAInterface {
         while (!stack.isEmpty()) {
             NFAState current = stack.pop();
             Map<Character, Set<NFAState>> transitions = transitionTable.get(current);
-            System.out.println("e closure trans " + transitions);
-            System.out.println("current " + current);
 
             if (transitions != null && transitions.containsKey('e')) {
                 Set<NFAState> epsilonStates = transitions.get('e');
@@ -197,7 +195,6 @@ public class NFA implements NFAInterface {
             }
         }
 
-        System.out.println("the closure for " + s  + closure);
         return closure;
     }
 
